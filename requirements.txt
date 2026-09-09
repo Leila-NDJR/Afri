@@ -1,0 +1,34 @@
+# Dépendances Python du projet Afri (scoring crédit comportemental M0-M6).
+# Installation : pip install -r requirements.txt
+#
+# NB : l'agent LLM (llm_utils.py) suppose Ollama installé et démarré
+# localement (https://ollama.com), avec le modèle `llama3.1` déjà tiré
+# (`ollama pull llama3.1`) — non installable via pip.
+
+# --- Data science ---
+numpy
+pandas
+scipy
+scikit-learn
+imbalanced-learn
+
+# --- Explicabilité ---
+shap
+
+# --- Fiabilité inter-évaluateurs (ICC test-retest) ---
+pingouin
+
+# --- Embeddings texte (CamemBERT) ---
+torch
+transformers
+
+# --- Agent LLM local ---
+ollama
+pydantic
+
+# --- Notebooks ---
+jupyter
+notebook
+
+# --- Tests ---
+pytest

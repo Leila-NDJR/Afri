@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Environnements virtuels
+.venv/
+venv/
+env/
+
+# Fichiers temporaires d'édition Office
+~$*.docx
+~$*.pptx
+~$*.xlsx
+
+# Outils / config locaux
+.claude/
