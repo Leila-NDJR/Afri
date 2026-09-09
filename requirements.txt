@@ -32,3 +32,7 @@ notebook
 
 # --- Tests ---
 pytest
+
+# --- Dashboard ---
+streamlit
+plotly

@@ -24,6 +24,7 @@ Afri/
 ├── categorisation.py          # Lexique de règles pour catégoriser les libellés de transaction (palier M2)
 ├── scoring_utils.py           # Fonctions partagées : pipeline de modélisation, AUC/Gini/KS, test de DeLong
 ├── llm_utils.py                # Agent LLM local (Ollama) : construction du prompt, appel, validation, scores S1/S2/S3
+├── dashboard.py                # Dashboard Streamlit multi-pages (vue d'ensemble, scoring, équité, performance)
 ├── tests/                     # Tests unitaires (pytest) — categorisation, scoring_utils, llm_utils
 ├── clients_synth.csv          # Jeu de données synthétique : 2 000 clients
 ├── transactions_synth.csv     # Jeu de données synthétique : 91 666 transactions bancaires
@@ -88,3 +89,22 @@ pytest
 ```
 
 Les tests unitaires (`tests/`) couvrent notamment la catégorisation des transactions, les fonctions de modélisation partagées (`scoring_utils.py`) et le pipeline de l'agent LLM (`llm_utils.py`), y compris le verrouillage par `monkeypatch` du défaut de température déterministe.
+
+## Dashboard
+
+Un dashboard Streamlit multi-pages (`dashboard.py`) permet d'explorer les résultats du projet sans repasser par les notebooks :
+
+- **Vue d'ensemble** : contexte du projet, KPIs clés (nombre de clients synthétiques, taux de défaut, meilleur modèle statistique, ICC de l'agent LLM).
+- **Scorer un client** : score statistique en direct via le pipeline **M3** réel (`scoring_utils.py`, ré-entraîné sur les vraies données à l'ouverture de la page), pour un client existant de `clients_synth.csv` ou une saisie manuelle ; exemple de dossier et résultats déjà calculés du pilote LLM (`m5_m6_llm.ipynb`) — le scoring LLM n'est **pas** relancé en direct (Ollama n'est pas supposé démarré dans l'environnement de démo).
+- **Équité & fiabilité** : audit d'équité réel par secteur et par sexe (`equite.ipynb`, règle des 4/5, corrections par seuils de groupe et par repondération de Kamiran & Calders), ICC réels des scores LLM (S1/S2/S3) avec le seuil de fiabilité de 0,75.
+- **Performance des modèles** : comparaison M0 → M6, à pleine échelle (train 1 600 / test 400) et sur le pilote LLM (60 dossiers).
+
+Lancement :
+
+```bash
+streamlit run dashboard.py
+```
+
+Toutes les métriques affichées proviennent de données ou de résultats déjà produits par le projet (CSV synthétiques, `scoring_utils.py`, ou sorties déjà calculées de `equite.ipynb` / `m5_m6_llm.ipynb` / ce README) — aucun chiffre n'est inventé.
+
+**Note de vérification** : la syntaxe de `dashboard.py` a été validée (`python -m py_compile dashboard.py`, sans erreur) et sa logique relit fidèlement `scoring_utils.py`/`categorisation.py` sur les vraies données. Son exécution réelle (`streamlit run dashboard.py`) n'a en revanche pas pu être testée dans l'environnement de développement au moment de l'écriture, faute de pouvoir installer `streamlit`/`plotly` (réseau indisponible pour `pip install` à ce moment-là) — limite d'environnement, pas un défaut du code. À vérifier avec `pip install -r requirements.txt && streamlit run dashboard.py` dès que l'installation est possible.
