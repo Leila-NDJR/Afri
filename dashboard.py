@@ -34,17 +34,114 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 import streamlit as st
+from matplotlib.colors import LinearSegmentedColormap
 from sklearn.metrics import roc_auc_score
 from sklearn.model_selection import train_test_split
 
 from categorisation import construire_parts_categories
 from scoring_utils import construire_pipeline, construire_variables_comportementales
 
+# ==============================================================================
+# 1. PALETTE PASTEL & THÈME
+# ==============================================================================
+PASTEL = {
+    "violet": "#C4B5FD",       # violet clair — couleur d'accent principale
+    "violet_deep": "#8B7CE0",  # violet un peu plus soutenu (texte sur fond clair)
+    "violet_soft": "#F3F0FF",  # fond très clair
+    "green": "#A8E6CF",        # succès / low risk
+    "orange": "#FFD3A5",       # attention / medium risk
+    "pink": "#FFAAA5",         # danger / high risk
+    "blue": "#A7C7E7",         # secondaire
+    "ink": "#000000",          # texte : noir
+    "muted": "#8B87A0",
+}
+PLOTLY_PASTEL_SEQUENCE = [PASTEL["violet"], PASTEL["blue"], PASTEL["green"], PASTEL["orange"], PASTEL["pink"]]
+
 st.set_page_config(
-    page_title="Afri — Scoring crédit comportemental",
+    page_title="Afri — Scoring comportemental M0-M6",
     layout="wide",
     page_icon="💳",
+    initial_sidebar_state="expanded",
 )
+
+st.markdown(
+    f"""
+    <style>
+    .stApp {{ background-color: #FDFCFF; }}
+    /* Barre d'outils Streamlit par défaut : recolorée pour se fondre dans la
+    page, SANS rien masquer (visibility/display) — un précédent essai avait
+    caché par erreur le bouton pour rouvrir la barre latérale une fois
+    réduite, qui vit dans ce même conteneur. */
+    header[data-testid="stHeader"] {{ background-color: #FDFCFF; }}
+    section[data-testid="stSidebar"] {{ background-color: {PASTEL["violet_soft"]}; }}
+    /* Texte en noir, restreint aux éléments qui portent réellement du texte
+    (pas de sélecteur `div` générique : ça avait aussi noirci des icônes -
+    ex. le bouton de la barre latérale - rendues via `currentColor`, les
+    rendant invisibles sur leur propre fond). Le logo JL reste blanc
+    (règle .jl-logo plus bas, après celle-ci donc prioritaire à égalité de
+    spécificité). */
+    h1, h2, h3, h4, h5, h6, p, li, label, td, th,
+    .stMarkdown, [data-testid="stCaptionContainer"],
+    [data-testid="stMetricValue"], [data-testid="stMetricLabel"] {{
+        color: #000000 !important;
+    }}
+    div[data-testid="stMetric"] {{
+        background-color: {PASTEL["violet_soft"]};
+        border: 1px solid {PASTEL["violet"]};
+        border-radius: 12px;
+        padding: 12px 16px;
+    }}
+    .jl-logo, .jl-logo * {{
+        display: inline-flex; align-items: center; justify-content: center;
+        width: 56px; height: 56px; border-radius: 14px;
+        background: {PASTEL["violet"]};
+        font-family: Georgia, 'Times New Roman', serif;
+        font-style: italic; font-weight: 700; font-size: 24px;
+        color: #FFFFFF !important; letter-spacing: 1px;
+        box-shadow: 0 2px 8px rgba(139, 124, 224, 0.35);
+    }}
+    .jl-header {{ display: flex; align-items: center; gap: 14px; margin-bottom: 6px; }}
+    .jl-header-title {{ font-size: 15px; font-weight: 700; }}
+    .jl-header-sub {{ font-size: 12px; }}
+    .jl-card {{
+        background: {PASTEL["violet_soft"]}; border-radius: 12px;
+        padding: 16px 20px; border-left: 4px solid {PASTEL["violet"]};
+        margin-bottom: 10px;
+    }}
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
+
+def jl_logo_header():
+    st.sidebar.markdown(
+        f"""
+        <div class="jl-header">
+            <div class="jl-logo">JL</div>
+            <div>
+                <div class="jl-header-title">K. Jessy</div>
+                <div class="jl-header-sub">Scoring comportemental M0-M6</div>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def card(html: str):
+    st.markdown(f'<div class="jl-card">{html}</div>', unsafe_allow_html=True)
+
+
+def _style_fig(fig, **layout_kwargs):
+    """Applique le fond transparent + le texte en noir communs à tous les graphiques."""
+    fig.update_layout(
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
+        font=dict(color=PASTEL["ink"]),
+        **layout_kwargs,
+    )
+    return fig
 
 # ============================================================================
 # Constantes reprises telles quelles des notebooks (mêmes colonnes/paramètres
@@ -238,10 +335,18 @@ hors-ligne) qui attribue trois scores qualitatifs additionnels (S1, S2, S3).
     st.subheader("Répartition du portefeuille synthétique")
     cc1, cc2 = st.columns(2)
     with cc1:
-        fig = px.pie(clients, names="secteur", title="Secteur d'activité déclaré", hole=0.45)
+        fig = px.pie(
+            clients, names="secteur", title="Secteur d'activité déclaré", hole=0.45,
+            color_discrete_sequence=PLOTLY_PASTEL_SEQUENCE,
+        )
+        _style_fig(fig, legend=dict(orientation="h", yanchor="bottom", y=-0.15))
         st.plotly_chart(fig, use_container_width=True)
     with cc2:
-        fig = px.histogram(clients, x="age", nbins=18, title="Distribution de l'âge (18-35 ans)")
+        fig = px.histogram(
+            clients, x="age", nbins=18, title="Distribution de l'âge (18-35 ans)",
+            color_discrete_sequence=[PASTEL["violet"]],
+        )
+        _style_fig(fig)
         st.plotly_chart(fig, use_container_width=True)
 
     st.info(
@@ -293,15 +398,15 @@ def page_scorer_client():
                 title={"text": "Probabilité de défaut à 90 jours"},
                 gauge={
                     "axis": {"range": [0, 100]},
-                    "bar": {"color": "#7A2E2E"},
+                    "bar": {"color": PASTEL["violet_deep"]},
                     "steps": [
-                        {"range": [0, 33], "color": "#DCEEDD"},
-                        {"range": [33, 66], "color": "#FBEAC0"},
-                        {"range": [66, 100], "color": "#F6CFCB"},
+                        {"range": [0, 33], "color": PASTEL["green"]},
+                        {"range": [33, 66], "color": PASTEL["orange"]},
+                        {"range": [66, 100], "color": PASTEL["pink"]},
                     ],
                 },
             ))
-            fig.update_layout(height=280, margin=dict(l=20, r=20, t=50, b=10))
+            _style_fig(fig, height=280, margin=dict(l=20, r=20, t=50, b=10))
             st.plotly_chart(fig, use_container_width=True)
         with g2:
             st.metric("Statut réel observé (jeu synthétique)", "Défaut à 90 jours" if label_reel else "Pas de défaut")
@@ -341,9 +446,9 @@ def page_scorer_client():
         fig = go.Figure(go.Indicator(
             mode="gauge+number", value=proba * 100, number={"suffix": " %"},
             title={"text": "Probabilité de défaut à 90 jours (estimation, variables comportementales = moyennes du portefeuille)"},
-            gauge={"axis": {"range": [0, 100]}, "bar": {"color": "#7A2E2E"}},
+            gauge={"axis": {"range": [0, 100]}, "bar": {"color": PASTEL["violet_deep"]}},
         ))
-        fig.update_layout(height=280, margin=dict(l=20, r=20, t=60, b=10))
+        _style_fig(fig, height=280, margin=dict(l=20, r=20, t=60, b=10))
         st.plotly_chart(fig, use_container_width=True)
 
     st.divider()
@@ -375,11 +480,12 @@ def page_equite_fiabilite():
     )
     icc_df = pd.DataFrame({"score": list(ICC_LLM.keys()), "icc": list(ICC_LLM.values())})
     fig = px.bar(icc_df, x="score", y="icc", range_y=[0, 1], text="icc",
-                 color="icc", color_continuous_scale=["#B3403A", "#E8B84B", "#3E7C59"], range_color=[0, 1])
+                 color="icc", color_continuous_scale=[PASTEL["pink"], PASTEL["orange"], PASTEL["green"]],
+                 range_color=[0, 1])
     fig.update_traces(texttemplate="%{text:.3f}", textposition="outside")
-    fig.add_hline(y=SEUIL_FIABILITE_ICC, line_dash="dash", line_color="gray",
+    fig.add_hline(y=SEUIL_FIABILITE_ICC, line_dash="dash", line_color=PASTEL["muted"],
                   annotation_text="seuil de fiabilité 0,75", annotation_position="top left")
-    fig.update_layout(showlegend=False, coloraxis_showscale=False, yaxis_title="ICC(C,1)", xaxis_title=None)
+    _style_fig(fig, showlegend=False, coloraxis_showscale=False, yaxis_title="ICC(C,1)", xaxis_title=None)
     st.plotly_chart(fig, use_container_width=True)
     st.error(
         "Aucun des trois scores n'atteint le seuil de 0,75 sur ce pilote réduit (60 dossiers, dont 20 "
@@ -403,11 +509,12 @@ def page_equite_fiabilite():
         use_container_width=True, hide_index=True,
     )
     fig2 = px.bar(EQUITE_SECTEUR, x="variante", y="ratio_4_5", text="ratio_4_5",
-                  title="Ratio d'approbation formel/informel (règle des 4/5)")
+                  title="Ratio d'approbation formel/informel (règle des 4/5)",
+                  color_discrete_sequence=[PASTEL["violet"]])
     fig2.update_traces(texttemplate="%{text:.2f}", textposition="outside")
-    fig2.add_hline(y=SEUIL_REGLE_4_5, line_dash="dash", line_color="gray",
+    fig2.add_hline(y=SEUIL_REGLE_4_5, line_dash="dash", line_color=PASTEL["muted"],
                    annotation_text="seuil des 4/5 (0,80)", annotation_position="top left")
-    fig2.update_layout(yaxis_title="ratio (min/max)", xaxis_title=None)
+    _style_fig(fig2, yaxis_title="ratio (min/max)", xaxis_title=None)
     st.plotly_chart(fig2, use_container_width=True)
     st.caption(
         "La repondération (B) fait passer le ratio sous le seuil des 4/5 au coût d'une perte d'AUC "
@@ -437,15 +544,19 @@ def page_performance_modeles():
 
     st.subheader("Échelle réelle du portefeuille (train 1 600 / test 400 clients)")
     st.caption("Résultats réels affichés par `baseline.ipynb`, `m2_m3_texte.ipynb` et `m4_embeddings.ipynb`.")
+    _cmap_pastel_violet = LinearSegmentedColormap.from_list(
+        "pastel_violet", [PASTEL["violet_soft"], PASTEL["violet_deep"]]
+    )
     st.dataframe(
         PERF_PLEINE_ECHELLE.style.format({"auc": "{:.3f}", "gini": "{:.3f}", "ks": "{:.3f}"})
-        .background_gradient(subset=["auc"], cmap="Greens"),
+        .background_gradient(subset=["auc"], cmap=_cmap_pastel_violet),
         use_container_width=True, hide_index=True,
     )
-    fig = px.bar(PERF_PLEINE_ECHELLE, x="modele", y="auc", text="auc", title="AUC par palier (pleine échelle)")
+    fig = px.bar(PERF_PLEINE_ECHELLE, x="modele", y="auc", text="auc", title="AUC par palier (pleine échelle)",
+                 color_discrete_sequence=[PASTEL["blue"]])
     fig.update_traces(texttemplate="%{text:.3f}", textposition="outside")
-    fig.update_layout(yaxis_range=[0.5, 0.8], xaxis_title=None, yaxis_title="AUC (test)")
-    fig.add_hline(y=0.5, line_dash="dot", line_color="gray", annotation_text="hasard (AUC 0,5)")
+    _style_fig(fig, yaxis_range=[0.5, 0.8], xaxis_title=None, yaxis_title="AUC (test)")
+    fig.add_hline(y=0.5, line_dash="dot", line_color=PASTEL["muted"], annotation_text="hasard (AUC 0,5)")
     st.plotly_chart(fig, use_container_width=True)
     st.caption(
         "M2 (catégorisation par lexique des libellés) apporte le principal gain statistiquement "
@@ -464,10 +575,11 @@ def page_performance_modeles():
         PERF_PILOTE_LLM.style.format({"auc": "{:.3f}", "gini": "{:.3f}", "ks": "{:.3f}"}),
         use_container_width=True, hide_index=True,
     )
-    fig3 = px.bar(PERF_PILOTE_LLM, x="modele", y="auc", text="auc", title="AUC par palier (pilote LLM, 60 dossiers)")
+    fig3 = px.bar(PERF_PILOTE_LLM, x="modele", y="auc", text="auc", title="AUC par palier (pilote LLM, 60 dossiers)",
+                  color_discrete_sequence=[PASTEL["violet_deep"]])
     fig3.update_traces(texttemplate="%{text:.3f}", textposition="outside")
-    fig3.update_layout(xaxis_title=None, yaxis_title="AUC (test pilote)")
-    fig3.add_hline(y=0.5, line_dash="dot", line_color="gray", annotation_text="hasard (AUC 0,5)")
+    _style_fig(fig3, xaxis_title=None, yaxis_title="AUC (test pilote)")
+    fig3.add_hline(y=0.5, line_dash="dot", line_color=PASTEL["muted"], annotation_text="hasard (AUC 0,5)")
     st.plotly_chart(fig3, use_container_width=True)
     st.info(
         "L'apport des scores LLM (M5 vs M3, M6 vs M4) n'est pas statistiquement significatif au test "
@@ -487,6 +599,8 @@ PAGES = {
     "Performance des modèles": page_performance_modeles,
 }
 
+jl_logo_header()
+st.sidebar.markdown("---")
 st.sidebar.title("Afri — Navigation")
 choix = st.sidebar.radio("Page", list(PAGES.keys()))
 st.sidebar.divider()

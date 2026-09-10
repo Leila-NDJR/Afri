@@ -36,3 +36,4 @@ pytest
 # --- Dashboard ---
 streamlit
 plotly
+matplotlib
