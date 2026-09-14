@@ -302,13 +302,14 @@ def page_vue_ensemble():
 
     st.markdown(
         """
-Selon la Politique de crédit 2025 d'Afriland First Bank, le taux de casse des
-crédits aux entreprises dépasse **13 %**, contre une norme interne de 6 %, avec
-un montant d'anomalies de **170 milliards de FCFA** au 31 décembre 2024. Ce
-projet construit et audite un pipeline de **scoring de crédit comportemental
-en six paliers (M0 → M6)** pour le segment 18-35 ans du marché camerounais,
-jusqu'à l'intégration d'un **agent LLM local** (Ollama, `llama3.1`, 100 %
-hors-ligne) qui attribue trois scores qualitatifs additionnels (S1, S2, S3).
+Dans le secteur bancaire camerounais, le taux de casse des crédits aux
+entreprises dépasse couramment la norme interne habituelle (de l'ordre de
+**5-6 %**) — un ordre de grandeur de marché, pas un chiffre propre à un
+établissement précis. Ce projet construit et audite un pipeline de
+**scoring de crédit comportemental en six paliers (M0 → M6)** pour le
+segment 18-35 ans du marché camerounais, jusqu'à l'intégration d'un
+**agent LLM local** (Ollama, `llama3.1`, 100 % hors-ligne) qui attribue
+trois scores qualitatifs additionnels (S1, S2, S3).
         """
     )
 
