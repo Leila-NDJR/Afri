@@ -302,14 +302,13 @@ def page_vue_ensemble():
 
     st.markdown(
         """
-Dans le secteur bancaire camerounais, le taux de casse des crédits aux
-entreprises dépasse couramment la norme interne habituelle (de l'ordre de
-**5-6 %**) — un ordre de grandeur de marché, pas un chiffre propre à un
-établissement précis. Ce projet construit et audite un pipeline de
-**scoring de crédit comportemental en six paliers (M0 → M6)** pour le
-segment 18-35 ans du marché camerounais, jusqu'à l'intégration d'un
-**agent LLM local** (Ollama, `llama3.1`, 100 % hors-ligne) qui attribue
-trois scores qualitatifs additionnels (S1, S2, S3).
+À fin 2024, les créances en souffrance atteignaient **16,2 %** de l'encours
+de crédit dans la zone CEMAC, soit **2 024 milliards de FCFA** (source :
+Commission bancaire de l'Afrique centrale — COBAC). Ce projet construit et
+audite un pipeline de **scoring de crédit comportemental en six paliers
+(M0 → M6)** pour le segment 18-35 ans du marché camerounais, jusqu'à
+l'intégration d'un **agent LLM local** (Ollama, `llama3.1`, 100 %
+hors-ligne) qui attribue trois scores qualitatifs additionnels (S1, S2, S3).
         """
     )
 
