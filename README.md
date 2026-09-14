@@ -37,7 +37,20 @@ Le diaporama de présentation des corrections d'audit (`build_afri.py` → `afri
 ## Résultats clés
 
 - **Échelle des données** : 2 000 clients (929 secteur formel / 1 071 informel), 91 666 transactions bancaires (3 derniers mois par client), taux de défaut à 90 jours de 15,9 %.
-- **Performance des modèles** (échantillon pilote M5/M6, 30 train / 30 test) :
+
+- **Performance des modèles statistiques à pleine échelle** (portefeuille complet, train 1 600 / test 400 — résultats réels affichés par `baseline.ipynb`, `m2_m3_texte.ipynb` et `m4_embeddings.ipynb`, et recalculés en direct dans le dashboard) :
+
+  | Modèle | AUC | Gini | KS |
+  |---|---|---|---|
+  | M0 (déclaratif) | 0,653 | 0,307 | 0,268 |
+  | M1 (+ comportemental) | 0,666 | 0,333 | 0,275 |
+  | M2 (+ catégories de transaction) | 0,719 | 0,438 | 0,350 |
+  | M3 (+ TF-IDF texte libre) | 0,718 | 0,437 | 0,327 |
+  | M4 (embeddings CamemBERT) | 0,681 | 0,361 | 0,297 |
+
+  Meilleur modèle statistique à pleine échelle : **M2 (AUC 0,719)** — le texte structuré en catégories apporte l'essentiel du gain par rapport au déclaratif seul (M0) ; le texte libre (M3) et les embeddings (M4) n'améliorent pas davantage sur cet échantillon. Variantes testées (M2-XGBoost, M2-Random Forest, M2-SMOTE) : voir le dashboard, page **Performance des modèles**.
+
+- **Pilote de l'agent LLM** (sous-échantillon de 60 dossiers, 30 train / 30 test — bien plus petit que le portefeuille complet ci-dessus, car le scoring LLM n'a pas été relancé à pleine échelle) :
 
   | Modèle | AUC | Gini | KS |
   |---|---|---|---|
@@ -46,7 +59,7 @@ Le diaporama de présentation des corrections d'audit (`build_afri.py` → `afri
   | M4 (embeddings CamemBERT) | 0,672 | 0,344 | 0,440 |
   | M6 (M4 + scores LLM) | 0,688 | 0,376 | 0,440 |
 
-  L'apport des scores LLM (M5 vs M3, M6 vs M4) n'est pas statistiquement significatif au test de DeLong sur cet échantillon réduit (p = 1,00 et p = 0,28 respectivement).
+  Sur ce pilote à 30 dossiers de test, les AUC de M3/M4 sont nettement plus instables qu'à pleine échelle (échantillon réduit) — ce n'est donc pas la mesure de référence du pouvoir prédictif des modèles statistiques, seulement le seul cadre où les scores LLM (S1/S2/S3) ont été comparés. L'apport de ces scores (M5 vs M3, M6 vs M4) n'est pas statistiquement significatif au test de DeLong sur cet échantillon réduit (p = 1,00 et p = 0,28 respectivement).
 
 - **Fiabilité test-retest (ICC)** — sur 20 dossiers rejoués du pilote LLM, aucun des trois scores n'atteint le seuil de fiabilité de 0,75 (Koo & Mae, 2016) :
   - S1 (volonté de remboursement) : **0,584**
